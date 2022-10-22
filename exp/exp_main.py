@@ -36,8 +36,8 @@ class Exp_Main(Exp_Basic):
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         return model
 
-    def _get_data(self, flag):
-        data_set, data_loader = data_provider(self.args, flag)
+    def _get_data(self, flag, pred_idx=0):
+        data_set, data_loader = data_provider(self.args, flag, pred_idx=pred_idx)
         return data_set, data_loader
 
     def _select_optimizer(self):
@@ -269,8 +269,8 @@ class Exp_Main(Exp_Basic):
 
         return
 
-    def predict(self, setting, load=False):
-        pred_data, pred_loader = self._get_data(flag='pred')
+    def predict(self, setting, load=False, pred_idx=0):
+        pred_data, pred_loader = self._get_data(flag='pred', pred_idx=pred_idx)
 
         if load:
             path = os.path.join(self.args.checkpoints, setting)

@@ -291,7 +291,7 @@ class Dataset_Custom(Dataset):
 class Dataset_Pred(Dataset):
     def __init__(self, root_path, flag='pred', size=None,
                  features='S', data_path='ETTh1.csv',
-                 target='OT', scale=True, inverse=True, timeenc=0, freq='15min', cols=None):
+                 target='OT', scale=True, inverse=True, timeenc=0, freq='15min', cols=None, pred_idx=0):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -314,6 +314,7 @@ class Dataset_Pred(Dataset):
         self.cols = cols
         self.root_path = root_path
         self.data_path = data_path
+        self.pred_idx = pred_idx
         self.__read_data__()
 
     def __read_data__(self):
@@ -331,8 +332,9 @@ class Dataset_Pred(Dataset):
             cols.remove(self.target)
             cols.remove('date')
         df_raw = df_raw[['date'] + cols + [self.target]]
-        border1 = len(df_raw) - self.seq_len
-        border2 = len(df_raw)
+
+        border2 = len(df_raw) - self.pred_idx
+        border1 = border2 - self.seq_len
 
         if self.features == 'M' or self.features == 'MS':
             cols_data = df_raw.columns[1:]
