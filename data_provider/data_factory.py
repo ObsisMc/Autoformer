@@ -41,6 +41,15 @@ def data_provider(args, flag, pred_idx=0):
         timeenc=timeenc,
         freq=freq,
         pred_idx=pred_idx
+    ) if Data.__class__.__name__ == "Dataset_Pred" else Data(
+        root_path=args.root_path,
+        data_path=args.data_path,
+        flag=flag,
+        size=[args.seq_len, args.label_len, args.pred_len],
+        features=args.features,
+        target=args.target,
+        timeenc=timeenc,
+        freq=freq
     )
     print(flag, len(data_set))
     data_loader = DataLoader(
