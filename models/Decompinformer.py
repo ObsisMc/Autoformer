@@ -4,6 +4,8 @@ import torch.nn.functional as F
 from layers.Embed import DataEmbedding, DataEmbedding_wo_pos
 from layers.AutoCorrelation import AutoCorrelation, AutoCorrelationLayer
 from layers.Autoformer_EncDec import Encoder, Decoder, EncoderLayer, DecoderLayer, my_Layernorm, series_decomp
+from layers.Informer_attn import FullAttention, ProbAttention, AttentionLayer
+from layers.Informer_EncDecoder import ConvLayer
 import math
 import numpy as np
 
@@ -37,8 +39,8 @@ class Model(nn.Module):
         self.encoder = Encoder(
             [
                 EncoderLayer(
-                    AutoCorrelationLayer(
-                        AutoCorrelation(False, configs.factor, attention_dropout=configs.dropout,
+                    AttentionLayer(
+                        ProbAttention(False, configs.factor, attention_dropout=configs.dropout,
                                         output_attention=configs.output_attention),
                         configs.d_model, configs.n_heads),
                     configs.d_model,
@@ -48,18 +50,23 @@ class Model(nn.Module):
                     activation=configs.activation
                 ) for l in range(configs.e_layers)
             ],
+            [
+                ConvLayer(
+                    configs.d_model
+                ) for l in range(configs.e_layers - 1)
+            ],
             norm_layer=my_Layernorm(configs.d_model)
         )
         # Decoder
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AutoCorrelationLayer(
-                        AutoCorrelation(True, configs.factor, attention_dropout=configs.dropout,
+                    AttentionLayer(
+                        ProbAttention(True, configs.factor, attention_dropout=configs.dropout,
                                         output_attention=False),
                         configs.d_model, configs.n_heads),
-                    AutoCorrelationLayer(
-                        AutoCorrelation(False, configs.factor, attention_dropout=configs.dropout,
+                    AttentionLayer(
+                        FullAttention(False, configs.factor, attention_dropout=configs.dropout,
                                         output_attention=False),
                         configs.d_model, configs.n_heads),
                     configs.d_model,

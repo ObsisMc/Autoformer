@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from layers.Embed import DataEmbedding, DataEmbedding_wo_pos
-from layers.AutoCorrelation import AutoCorrelation, AutoCorrelationLayer
-from layers.Autoformer_EncDec import Encoder, Decoder, EncoderLayer, DecoderLayer, my_Layernorm, series_decomp
+from layers.PSAttention import AutoCorrelation, AutoCorrelationLayer, FullAttention, ProbAttention
+from layers.PSformer_EncDec import Encoder, Decoder, EncoderLayer, DecoderLayer, my_Layernorm, series_decomp
+from layers.Informer_EncDecoder import ConvLayer
 import math
 import numpy as np
 
@@ -38,6 +39,8 @@ class Model(nn.Module):
             [
                 EncoderLayer(
                     AutoCorrelationLayer(
+                        ProbAttention(False, configs.factor, attention_dropout=configs.dropout,
+                                        output_attention=configs.output_attention),
                         AutoCorrelation(False, configs.factor, attention_dropout=configs.dropout,
                                         output_attention=configs.output_attention),
                         configs.d_model, configs.n_heads),
@@ -55,12 +58,16 @@ class Model(nn.Module):
             [
                 DecoderLayer(
                     AutoCorrelationLayer(
-                        AutoCorrelation(True, configs.factor, attention_dropout=configs.dropout,
+                        ProbAttention(True, configs.factor, attention_dropout=configs.dropout,
                                         output_attention=False),
+                        AutoCorrelation(True, configs.factor, attention_dropout=configs.dropout,
+                                        output_attention=configs.output_attention),
                         configs.d_model, configs.n_heads),
                     AutoCorrelationLayer(
-                        AutoCorrelation(False, configs.factor, attention_dropout=configs.dropout,
+                        FullAttention(False, configs.factor, attention_dropout=configs.dropout,
                                         output_attention=False),
+                        AutoCorrelation(False, configs.factor, attention_dropout=configs.dropout,
+                                        output_attention=configs.output_attention),
                         configs.d_model, configs.n_heads),
                     configs.d_model,
                     configs.c_out,

@@ -73,7 +73,7 @@ class EncoderLayer(nn.Module):
 
     def forward(self, x, attn_mask=None):
         # Obsismc: AutoCorrelation + seriesDecomp + FeedForward + Series Decomp
-        new_x, attn = self.attention(
+        new_x, point_attn, series_attn = self.attention(
             x, x, x,
             attn_mask=attn_mask
         )
@@ -83,7 +83,7 @@ class EncoderLayer(nn.Module):
         y = self.dropout(self.activation(self.conv1(y.transpose(-1, 1))))
         y = self.dropout(self.conv2(y).transpose(-1, 1))
         res, _ = self.decomp2(x + y)  # Obsismc: Only care about periodical feature in encoder
-        return res, attn
+        return res, point_attn, series_attn
 
 
 class Encoder(nn.Module):
@@ -101,15 +101,15 @@ class Encoder(nn.Module):
         attns = []
         if self.conv_layers is not None:
             for attn_layer, conv_layer in zip(self.attn_layers, self.conv_layers):
-                x, attn = attn_layer(x, attn_mask=attn_mask)
+                x, point_attn, series_attn = attn_layer(x, attn_mask=attn_mask)
                 x = conv_layer(x)
-                attns.append(attn)
-            x, attn = self.attn_layers[-1](x)
-            attns.append(attn)
+                attns.append([point_attn, series_attn])
+            x, point_attn, series_attn = self.attn_layers[-1](x)
+            attns.append([point_attn, series_attn])
         else:
             for attn_layer in self.attn_layers:
-                x, attn = attn_layer(x, attn_mask=attn_mask)
-                attns.append(attn)
+                x, point_attn, series_attn = attn_layer(x, attn_mask=attn_mask)
+                attns.append([point_attn, series_attn])
 
         if self.norm is not None:
             x = self.norm(x)
